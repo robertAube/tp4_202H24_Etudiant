@@ -15,11 +15,17 @@ public class CtrlDataCenter {
      * Structure mémorisant les valeurs des cellules
      */
     private IDataCenter dataCenter;
-    private String monFichier = null;
+    private String nomFichier = null;
 
     boolean dataModifie = false; //Le fichier est considéré comme pas encore modifié au départ
 
+    /**
+     * Nombre de lignes dans la feuille
+     */
     private int nbLigne;
+    /**
+     * Nombre de colonnes dans la feuille
+     */
     private int nbColonne;
 
     public CtrlDataCenter(int nbLigne, int nbColonne) {
@@ -85,7 +91,7 @@ public class CtrlDataCenter {
     }
 
     private void menuEnregistrer() {
-        if (monFichier == null) {
+        if (nomFichier == null) { //si le nom de fichier n'est pas défini
             menuEnregistrerSous();
         } else {
             //TODO Enregistrer le DataCenter
@@ -102,8 +108,16 @@ public class CtrlDataCenter {
         if (resultatEnregistrer ==
                 JFileChooser.APPROVE_OPTION) // Si l’utilisateur clique sur le bouton ENREGISTRER
         {
-            monFichier = choix.getSelectedFile().toString();
+            nomFichier = choix.getSelectedFile().toString();
+            enregisterFichier();
         }
+    }
+
+    /**
+     * Enregistre le Datacenter dans le fichier identifié dans la variable nomFichier
+     */
+    private void enregisterFichier() {
+        //TODO Enregistrer le DataCenter sous nomFichier
     }
 
     private void menuOuvrir() {
@@ -117,23 +131,25 @@ public class CtrlDataCenter {
 
         // Si l’utilisateur clique sur le bouton OUVRIR
         if (resultatOuvrir == filechoose.APPROVE_OPTION) {
-            monFichier = filechoose.getSelectedFile().toString();
-            lireDataCenter(monFichier);
+            nomFichier = filechoose.getSelectedFile().toString();
+            lireDataCenter("");
         }
     }
 
     private void menuFermer() {
         dataCenter.removeAllData();
-        monFichier = null;
+        nomFichier = null;
     }
 
     /**
-     * Permet de lire le fichier et de le récupérer
-     * @param monFichier
+     * Permet de lire le fichier jSon et de le récupérer
+     *
+     * @param nomFichier
      */
-    private void lireDataCenter(String monFichier) {
+    private void lireDataCenter(String nomFichier) {
         //TODO Récupérer le DataCenter
     }
+
     public Set<CellKey> getListCellARafraichir() {
         return dataCenter.getSetCellARafraichir();
     }
@@ -157,6 +173,7 @@ public class CtrlDataCenter {
 
     /**
      * Retourne le texte affiché dans le <b>À propos</b>
+     *
      * @return le texte à afficher dans le <b>À propos</b>
      */
     //TODO Mettre à jour avec votre groupe et le nom des équipiers

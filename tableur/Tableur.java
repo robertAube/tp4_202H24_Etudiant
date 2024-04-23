@@ -1,20 +1,43 @@
 package tableur;
 
-import dataCenter.*;
+import dataCenter.CellKey;
+import utilTableur.TableCellListener;
 
-import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Arrays;
-import java.util.Locale;
 
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.util.Arrays;
+
+import javax.swing.*;
+import javax.swing.border.BevelBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
+import java.util.Locale;
 
 /**
  * Panneau d'un tableur
+ *
+ * @author Robert Aubé
+ * @version 1.2 - (Robert Aubé)
  */
 public class Tableur extends JPanel implements ActionListener {
+
+    /**
+     * Tableaux du chiffrier
+     */
+    private JTable jTable;
+    private JLabel txtStatusBar;
+    private JLabel txtIDCellule;
+    private JLabel txtContenuCellule;
+
+    public JScrollPane scrollPane;
+
+    TableCellListener tcl;
     /**
      * Nombre de lignes dans la feuille
      */
@@ -23,60 +46,106 @@ public class Tableur extends JPanel implements ActionListener {
      * Nombre de colonnes dans la feuille
      */
     public static final int NB_COLONNE = 10;
+
+    public static final int HAUTEUR_LIGNE = 23;
+
     /**
-     * Tableaux du chiffrier
+     * Structure de données qui conserve le contenu des cellules
      */
-    private JTable table;
-    private JTable tableFirstCol;
-
-    private JPanel panelMenu;
-
-    private JMenuBar menuBar;
-    private JTextArea output;
-
-
     private CtrlDataCenter ctrlDataCenter;
 
     String titresMenuData[] = {"Tableau", "ArrayList", "Vector", "LinkedList", "HashSet", "TreeSet", "HashMap", "TreeMap"};
 
     public Tableur() {
         super();
-        ctrlDataCenter = new CtrlDataCenter(NB_LIGNE, NB_COLONNE);
-
         this.setLocale(Locale.CANADA);
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-
-        //menu du haut
-        ajouterMenuBar();
-        add(panelMenu);
-
-        //ajouter les 2 tables au JScrollPane
-        initColTitre();
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setRowHeaderView(tableFirstCol);
-        add(scrollPane);
-
-
-        output = new JTextArea(5, 100);
-        output.setFont(new Font("Courier New", Font.PLAIN, 12) );
-        output.setEditable(false);
-        add(new JScrollPane(output));
-
-        output.append(ctrlDataCenter.toString() + "\n");
+        ctrlDataCenter = new CtrlDataCenter(NB_LIGNE, NB_COLONNE);
+        initLayout();
+        updateStatusBar();
+        jTable.changeSelection(0,0,false,false);
+        tcl = new TableCellListener(jTable, actionListenerOnCell);
     }
 
-    private void ajouterMenuBar() {
-        panelMenu = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        menuBar = new JMenuBar();
+    private void initLayout() {
+        JMenuBar jMenuBar;
+        JPanel jContenuCelluleBar;
+        JPanel jPanelNorth;
+        JScrollPane scrollPane;
+        JPanel jStatusBar;
 
-        ajouterMenuFichier();
-        ajouterMenuDataStructure();
-        ajouterMenuAide();
+        setLayout(new BorderLayout());
 
-        panelMenu.add(menuBar);
+        jPanelNorth = new JPanel();
+        jPanelNorth.setLayout(new GridLayout(2, 1));
+
+        jMenuBar = initMenuBar();
+        jContenuCelluleBar = initContenuCelluleBar();
+        jPanelNorth.add(jMenuBar);
+        jPanelNorth.add(jContenuCelluleBar);
+        this.add(jPanelNorth, BorderLayout.NORTH);
+
+        scrollPane = initTable();
+        this.add(scrollPane, BorderLayout.CENTER);
+
+        jStatusBar = initStatusBar();
+        this.add(jStatusBar, BorderLayout.SOUTH);
+
+        this.addComponentListener(new ResizeListener());
     }
 
-    private void ajouterMenuFichier() {
+    private JPanel initContenuCelluleBar() {
+        JPanel jContenuCelluleBar = new JPanel();
+
+        jContenuCelluleBar.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+        txtIDCellule = new JLabel(" ");
+        txtIDCellule.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+        txtIDCellule.setMinimumSize(new Dimension(30, HAUTEUR_LIGNE));
+        txtIDCellule.setPreferredSize(new Dimension(30, HAUTEUR_LIGNE));
+        txtIDCellule.setHorizontalAlignment(SwingConstants.CENTER);
+
+        jContenuCelluleBar.add(txtIDCellule);
+
+        txtContenuCellule = new JLabel();
+        txtContenuCellule.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+        txtContenuCellule.setMinimumSize(new Dimension(30, HAUTEUR_LIGNE));
+        txtContenuCellule.setHorizontalAlignment(SwingConstants.LEFT);
+        jContenuCelluleBar.add(txtContenuCellule);
+        setTxtContenuCelluleWidth(this);
+
+        return jContenuCelluleBar;
+    }
+
+    private JPanel initStatusBar() {
+        JPanel jStatusPanel;
+// create the status bar panel and shove it down the bottom of the frame
+        jStatusPanel = new JPanel();
+
+        jStatusPanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
+        jStatusPanel.setPreferredSize(new Dimension(this.getWidth(), HAUTEUR_LIGNE));
+        jStatusPanel.setLayout(new BoxLayout(jStatusPanel, BoxLayout.X_AXIS));
+        txtStatusBar = new JLabel();
+        txtStatusBar.setHorizontalAlignment(SwingConstants.LEFT);
+        jStatusPanel.add(txtStatusBar);
+
+        return jStatusPanel;
+    }
+
+    private JMenuBar initMenuBar() {
+        JMenuBar jMenuBar = new JMenuBar();
+        JPanel jPanelMenu;
+
+        jPanelMenu = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        jMenuBar = ajouterMenuFichier(jMenuBar);
+        jMenuBar = ajouterMenuDataStructure(jMenuBar);
+        jMenuBar = ajouterMenuAide(jMenuBar);
+
+        jPanelMenu.add(jMenuBar);
+        return jMenuBar;
+    }
+
+    private JMenuBar ajouterMenuFichier(JMenuBar jMenuBar) {
         JMenu menuFichier = new JMenu("Fichier");
         JMenuItem menuItem;
 
@@ -87,10 +156,11 @@ public class Tableur extends JPanel implements ActionListener {
             menuFichier.add(menuItem);
             menuItem.addActionListener(this);
         }
-        menuBar.add(menuFichier);
+        jMenuBar.add(menuFichier);
+        return jMenuBar;
     }
 
-    private void ajouterMenuDataStructure() {
+    private JMenuBar ajouterMenuDataStructure(JMenuBar jMenuBar) {
         JMenu menuStrucData = new JMenu("Structure de donn\u00E9es"); //http://www.kreativekorp.com/charset/encoding/CP037/
 
         ButtonGroup itemGroup = new ButtonGroup();
@@ -104,58 +174,78 @@ public class Tableur extends JPanel implements ActionListener {
         //sélectionner le bouton radio Tableau, car c'est le premier choisit par défaut
         menuStrucData.getItem(0).setSelected(true);
 
-        menuBar.add(menuStrucData);
+        jMenuBar.add(menuStrucData);
+        return jMenuBar;
     }
 
-    private void ajouterMenuAide() {
+    private JMenuBar ajouterMenuAide(JMenuBar jMenuBar) {
         JMenu menuInfo = new JMenu("?");
         JMenuItem menuItem;
 
-        menuItem = new JMenuItem("\u00C0 propos");
+        menuItem = new JMenuItem("\u00C0 propos"); //http://www.kreativekorp.com/charset/encoding/CP037/
         menuInfo.add(menuItem);
         menuItem.addActionListener(this);
 
-        menuBar.add(menuInfo);
+        jMenuBar.add(menuInfo);
+
+        return jMenuBar;
     }
 
-    private void initColTitre() {
+    private JScrollPane initTable() {
+
+        JTable jTableFirstCol;
         //Table principale
         {
             TableDesCellules modeleDeTable = new TableDesCellules();
-            table = new JTable(modeleDeTable);
-            table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+            jTable = new JTable(modeleDeTable);
+            jTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+            jTable.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+            jTable.setCellSelectionEnabled(true);
+            jTable.setPreferredScrollableViewportSize(new Dimension(800, 500));
 
-            TabIdentifiantDesLignes modeleFirstCol = new TabIdentifiantDesLignes();
-            tableFirstCol = new JTable(modeleFirstCol);
+            jTable.getSelectionModel().addListSelectionListener(
+                    new ListSelectionListener() {
+                        public void valueChanged(ListSelectionEvent event) {
+                            updateContenuCelluleBar();
+                        }
+                    });
+            jTable.getColumnModel().getSelectionModel().addListSelectionListener(
+                    new ListSelectionListener() {
+                        public void valueChanged(ListSelectionEvent event) {
+                            updateContenuCelluleBar();
+                        }
+                    });
 
-            table.setPreferredScrollableViewportSize(new Dimension(800, 500));
-
-            table.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
-            table.setCellSelectionEnabled(true);
         }
         //Colonne 1
         {
-            //Fixer la largeur de la colonne 1
-            Dimension d = tableFirstCol.getPreferredScrollableViewportSize();
-            d.width = 30;
-            tableFirstCol.setPreferredScrollableViewportSize(d);
-            tableFirstCol.setRowHeight(table.getRowHeight());
+            TabIdentifiantDesLignes modeleFirstCol = new TabIdentifiantDesLignes();
+            jTableFirstCol = new JTable(modeleFirstCol);
 
-            //Fixer l'apparence de la colonne 1
-            LookAndFeel.installColorsAndFont(tableFirstCol,
+            //Fixer la largeur de la colonne 1
+            Dimension d = jTableFirstCol.getPreferredScrollableViewportSize();
+            d.width = 30;
+            jTableFirstCol.setPreferredScrollableViewportSize(d);
+            jTableFirstCol.setRowHeight(jTable.getRowHeight());
+
+            //Fixer l'apprence de la colonne 1
+            LookAndFeel.installColorsAndFont(jTableFirstCol,
                     "TableHeader.background",
                     "TableHeader.foreground",
                     "TableHeader.font");
         }
+        scrollPane = new JScrollPane(jTable);
+        scrollPane.setRowHeaderView(jTableFirstCol);
+        return scrollPane;
     }
 
     public void actionPerformed(ActionEvent event) {
         String itemMenu = event.getActionCommand();
         switch (itemMenu) {
-            case "\u00C0 propos":
+            case "À propos":
                 JOptionPane.showMessageDialog(this,
-                        "Fait par \n" + ctrlDataCenter.getFaitPar(),
-                       "\u00C0 propos du TP4 en 420-202",
+                        "Fait par " + ctrlDataCenter.getFaitPar(),
+                        "À propos du TP4 en 420-202",
                         JOptionPane.INFORMATION_MESSAGE
                 );
                 break;
@@ -166,15 +256,71 @@ public class Tableur extends JPanel implements ActionListener {
                 ctrlDataCenter.performMenu(itemMenu);
         }
         if (stringContainsItemFromList(itemMenu, titresMenuData)) {
-            output.selectAll(); // On sélectionne le texte pour le supprimer.
-            output.replaceSelection("");
-            output.append(ctrlDataCenter.toString() + "\n");
+            updateStatusBar();
         }
-        table.repaint();
+        jTable.repaint();
     }
+
+    private void updateStatusBar() {
+        txtStatusBar.setText(ctrlDataCenter.toString());
+    }
+
+    private void updateContenuCelluleBar() {
+        String strContenu = "";
+        int ligne = jTable.getSelectedRow();
+        int colonne = jTable.getSelectedColumn();
+        String guillemets = "";
+//        guillemets = "\"";
+
+        if (ligne != -1 && colonne != -1) {
+            txtIDCellule.setText(utilTableur.ColonneTableur.toName(colonne + 1) + (ligne + 1));
+            strContenu = ctrlDataCenter.getFormula(ligne, colonne);
+        }
+        setTxtContenuCelluleWidth(this);
+        txtContenuCellule.setText(guillemets + strContenu + guillemets);
+    }
+
+    public void setTxtContenuCelluleWidth(Component component) {
+        int width = component.getWidth() - 45;
+        txtContenuCellule.setPreferredSize(new Dimension(width, HAUTEUR_LIGNE));
+    }
+
 
     public static boolean stringContainsItemFromList(String inputStr, String[] items) {
         return Arrays.stream(items).anyMatch(inputStr::contains);
+    }
+
+    Action actionListenerOnCell = new AbstractAction()
+    {
+        public void actionPerformed(ActionEvent e)
+        {
+//            TableCellListener tcl = (TableCellListener)e.getSource();
+//            System.out.println("Row   : " + tcl.getRow());
+//            System.out.println("Column: " + tcl.getColumn());
+//            System.out.println("Old   : " + tcl.getOldValue());
+//            System.out.println("New   : " + tcl.getNewValue());
+            updateContenuCelluleBar();
+        }
+    };
+
+    class ResizeListener implements ComponentListener {
+        public void componentResized(ComponentEvent e) {
+            setTxtContenuCelluleWidth(e.getComponent());
+        }
+
+        @Override
+        public void componentMoved(ComponentEvent e) {
+        }
+
+        @Override
+        public void componentShown(ComponentEvent e) {
+            setTxtContenuCelluleWidth(e.getComponent());
+        }
+
+        @Override
+        public void componentHidden(ComponentEvent e) {
+
+        }
     }
 
     class TableDesCellules extends AbstractTableModel {
@@ -195,8 +341,9 @@ public class Tableur extends JPanel implements ActionListener {
                 //  System.out.println("getValueAt(" + ligne + ", " + colonne + ")"); //retirer le commentaire pour debugger
                 str = ctrlDataCenter.getFormula(ligne, colonne);
                 goOnEdit = null;
-            } else
+            } else {
                 str = ctrlDataCenter.getValue(ligne, colonne);
+            }
             return str;
         }
 
@@ -209,16 +356,17 @@ public class Tableur extends JPanel implements ActionListener {
         public void setValueAt(Object value, int ligne, int colonne) {
             ctrlDataCenter.set(ligne, colonne, value.toString());
             rafraichirCelluleUtilise();
-            fireTableCellUpdated(ligne, colonne);
+            fireTableCellUpdated(ligne, colonne); //mettre à jour la cellule
+            fireTableCellUpdated(0, 0);
         }
 
-
         private void rafraichirCelluleUtilise() {
-            //TODO rafraichir avec la liste de toutes les cellules qui sont dans le setCellARafraichir
-            //ici on rafraichit uniquement la colonne cellule 0,0
+        //TODO rafraichir avec la liste de toutes les cellules qui sont dans la liste listARafraichir
+        //Si une cellule est mise à jour, toutes les cellules qui y font doivent mise à jour avec
             fireTableCellUpdated(0, 0);
         }
     }
+
 
     /**
      * Identifie les lignes

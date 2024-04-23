@@ -52,8 +52,9 @@ public interface IDataCenter {
     void removeAllData();
 
     /**
-     * Retourne un Set de CellKey, des cellules à rafraichir si une mise à jour des cellules est lancée.
-     * Elle contient la référence ligne et colonne de toutes les cellules où il y a une donnée dans le tableur.
+     * Retourne un Set de CellKey, des cellules à rafraichir qui contiennent une formule (commencant par =)
+     * si une mise à jour des cellules est lancée.
+     * Elle contient la référence ligne et colonne de toutes les cellules où il y a une formule dans le tableur.
      * Cette gestion se fait par le set(ligne, col, newCellValue). Chaque fois que l'on...
      * - ajoute une cellule, on ajoute la référence ligne, colonne à la liste.
      * - attribue la valeur "" à la cellule, on la supprime de la liste.

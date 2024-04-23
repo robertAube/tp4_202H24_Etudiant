@@ -18,6 +18,12 @@ public abstract class AbstactDataCenter implements IDataCenter {
     private int nbSet = 0;
 
     /**
+     * Correspond au nom de la structure de données courante.
+     * Exemple : Tableau
+     */
+    private String nomStructureCourante = "Tableau";
+
+    /**
      * C'est un set de toutes les cellules non-vides (ou différentes de "")
      * dans la structure de données.
      * La fenêtre du tableur en a de besoin pour procéder au rafraîchissement.
@@ -109,6 +115,13 @@ public abstract class AbstactDataCenter implements IDataCenter {
      */
     private void setCellARafraichir(int ligne, int colonne, String newCellValue) {
         //TODO private void setCellARafraichir(int ligne, int colonne, String newCellValue)
+    }
+
+    /**
+     * Vide le set "Cellules à rafraîchir"
+     */
+    private void setCellARafraichirRemoveAll() {
+        //TODO private void setCellARafraichirRemoveAll()
     }
 
     /**

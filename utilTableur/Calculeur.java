@@ -88,7 +88,7 @@ public class Calculeur {
         if (eat('(')) { // parenthèses
             x = analyserLExpression();
             if (!eat(')')) {
-                throw new RuntimeException("Missing ')'");
+                throw new RuntimeException("')' manquante");
             }
         } else if (('0' <= car && car <= '9') || car == '.') { // traiter les nombres
             while (('0' <= car && car <= '9') || car == '.') nextChar();
@@ -101,7 +101,7 @@ public class Calculeur {
             if (eat('(')) {
                 x = analyserLExpression();
                 if (!eat(')')) {
-                    throw new RuntimeException("Missing ')' after argument to " + func);
+                    throw new RuntimeException("Il manque ')' après " + func);
                 }
             } else {
                 x = analyserFacteur();
